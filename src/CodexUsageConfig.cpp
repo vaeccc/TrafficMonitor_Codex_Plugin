@@ -39,7 +39,7 @@ CodexUsageConfig LoadCodexConfig(const std::wstring& path) {
     CodexUsageConfig config;
     config.authPath = ReadValue(path, L"auth_path");
     config.proxyServer = ReadValue(path, L"proxy_server");
-    const auto mode = ReadValue(path, L"proxy_mode", L"direct");
+    const auto mode = ReadValue(path, L"proxy_mode", L"system");
     if (mode == L"system") config.proxyMode = ProxyMode::System;
     if (mode == L"direct") config.proxyMode = ProxyMode::Direct;
     if (mode == L"manual") config.proxyMode = ProxyMode::Manual;

@@ -6,7 +6,7 @@ enum class ProxyMode { System, Direct, Manual };
 
 struct CodexUsageConfig {
     std::wstring authPath;
-    ProxyMode proxyMode = ProxyMode::Direct;
+    ProxyMode proxyMode = ProxyMode::System;
     std::wstring proxyServer;
 };
 

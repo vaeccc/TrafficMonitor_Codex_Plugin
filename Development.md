@@ -17,18 +17,19 @@ cmake --build build --config Release
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-Visual Studio 多配置生成器产物位于 `build/Release`；Ninja 产物位于 `build`。DLL 架构应与宿主一致。CI 分别构建 x86、x64、ARM64，ARM64 不在 x64 runner 上运行测试。版本由 `CODEX_USAGE_VERSION` 控制，默认 `0.1.4`。
+Visual Studio 多配置生成器产物位于 `build/Release`；Ninja 产物位于 `build`。DLL 架构应与宿主一致。CI 分别构建 x86、x64、ARM64，ARM64 不在 x64 runner 上运行测试。版本由 `CODEX_USAGE_VERSION` 控制，默认 `0.1.5`。
 
-测试覆盖用量解析、显示格式、中文路径配置往返、默认路径、三种代理模式、无效地址、写入失败和本地 HTTP CONNECT 代理路由。测试仅写临时配置及合成令牌文件，不读取真实令牌或访问真实用量接口。系统代理的实际 PAC/WPAD 行为以及 TrafficMonitor 内的界面操作，需要在对应 Windows 环境手动验证。
+测试覆盖用量解析、显示格式、重置时间戳解析与本地日期时间转换、中文路径配置往返、默认路径、三种代理模式、无效地址、写入失败和本地 HTTP CONNECT 代理路由。测试仅写临时配置及合成令牌文件，不读取真实令牌或访问真实用量接口。系统代理的实际 PAC/WPAD 行为以及 TrafficMonitor 内的界面操作，需要在对应 Windows 环境手动验证。
 
 ## 配置与网络实现
 
 - `src/CodexUsageConfig.*`：解析默认令牌路径，校验 HTTP 代理地址，读写 DLL 同目录的 UTF-16 LE INI 文件。先写临时文件再替换，失败时保留原文件。
 - `src/CodexUsageOptions.*`、`src/CodexUsage.rc`：原生中文模态设置界面、JSON 文件选择、错误提示。
 - `src/CodexUsageFetcher.*`：每次请求使用一份配置快照；系统代理使用 `WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY`，直连使用 `WINHTTP_ACCESS_TYPE_NO_PROXY`，手动代理使用 `WINHTTP_ACCESS_TYPE_NAMED_PROXY`。[Microsoft WinHttpOpen 文档](https://learn.microsoft.com/en-us/windows/win32/api/winhttp/nf-winhttp-winhttpopen) 说明自动模式读取系统与当前用户代理设置，要求 Windows 8.1 或更新版本。
+- `src/CodexUsageCore.*`：解析 API 返回的 Unix `reset_at` 时间戳，使用 Windows 当前时区转换并按 `yyyy-MM-dd HH:mm` 格式显示。若时间戳无效，则保留原有倒计时显示。
 - `src/CodexUsagePlugin.cpp`：保存成功后清空旧显示，触发刷新；配置版本标记防止在途旧请求覆盖新配置结果。
 
-INI 节为 `[CodexUsage]`，键为 `auth_path`、`proxy_mode`（`system` / `direct` / `manual`）、`proxy_server`。没有配置文件时使用默认路径并直连；缺少或无法识别 `proxy_mode` 时也默认直连，已保存的有效代理模式会保留。手工编辑后需重启 TrafficMonitor。
+INI 节为 `[CodexUsage]`，键为 `auth_path`、`proxy_mode`（`system` / `direct` / `manual`）、`proxy_server`。没有配置文件时使用默认令牌路径并启用系统代理；缺少或无法识别 `proxy_mode` 时也默认系统代理。已保存的有效代理模式（包括用户主动选择的直连或手动代理）会保留，不会被默认值覆盖。手工编辑后需重启 TrafficMonitor。
 
 ## 排错
 

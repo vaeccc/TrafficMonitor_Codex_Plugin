@@ -74,12 +74,12 @@ void RunCodexConfigTests() {
     const std::wstring path = file;
     DeleteFileW(file);
     auto config = LoadCodexConfig(path);
-    Check(config.authPath.empty() && config.proxyMode == ProxyMode::Direct, "missing config defaults to no proxy");
-    Check(CodexUsageConfig{}.proxyMode == ProxyMode::Direct, "new configuration defaults to no proxy");
+    Check(config.authPath.empty() && config.proxyMode == ProxyMode::System, "missing config defaults to system proxy");
+    Check(CodexUsageConfig{}.proxyMode == ProxyMode::System, "new configuration defaults to system proxy");
     Check(WritePrivateProfileStringW(L"CodexUsage", L"auth_path", L"custom-auth.json", path.c_str()), "create config without proxy mode");
-    Check(LoadCodexConfig(path).proxyMode == ProxyMode::Direct, "missing proxy mode defaults to no proxy");
+    Check(LoadCodexConfig(path).proxyMode == ProxyMode::System, "missing proxy mode defaults to system proxy");
     Check(WritePrivateProfileStringW(L"CodexUsage", L"proxy_mode", L"unknown", path.c_str()), "write unknown proxy mode");
-    Check(LoadCodexConfig(path).proxyMode == ProxyMode::Direct, "unknown proxy mode defaults to no proxy");
+    Check(LoadCodexConfig(path).proxyMode == ProxyMode::System, "unknown proxy mode defaults to system proxy");
     DeleteFileW(file);
     std::wstring error;
     config.authPath = L" C:\\用户目录\\自定义 auth.json ";

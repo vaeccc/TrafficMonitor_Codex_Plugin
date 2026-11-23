@@ -20,7 +20,7 @@ INT_PTR CALLBACK OptionsProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lp
         SetWindowLongPtrW(dialog, DWLP_USER, lparam);
         SetDlgItemTextW(dialog, IDC_AUTH_PATH, config->authPath.c_str());
         SetDlgItemTextW(dialog, IDC_PROXY_SERVER, config->proxyServer.c_str());
-        for (auto label : {L"系统代理（自动读取）", L"直连（不使用代理）", L"手动代理"}) {
+        for (auto label : {L"系统代理（默认，自动读取）", L"直连（不使用代理）", L"手动代理"}) {
             SendDlgItemMessageW(dialog, IDC_PROXY_MODE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(label));
         }
         SendDlgItemMessageW(dialog, IDC_PROXY_MODE, CB_SETCURSEL, static_cast<WPARAM>(config->proxyMode), 0);

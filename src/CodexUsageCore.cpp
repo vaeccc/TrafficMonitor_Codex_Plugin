@@ -5,11 +5,24 @@
 #include <Windows.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace {
 
 constexpr int kFiveHourWindowSeconds = 5 * 60 * 60;
 constexpr int kWeeklyWindowSeconds = 7 * 24 * 60 * 60;
+
+constexpr long long kMaxUnixTimestampSeconds = 253402300799LL;
+constexpr ULONGLONG kUnixEpochInFileTimeTicks = 116444736000000000ULL;
+constexpr ULONGLONG kFileTimeTicksPerSecond = 10000000ULL;
+
+std::wstring PadNumber(unsigned value, size_t width) {
+    std::wstring text = std::to_wstring(value);
+    if (text.size() < width) {
+        text.insert(0, width - text.size(), L'0');
+    }
+    return text;
+}
 
 bool ExtractWindow(const jsonlite::Value* windowNode, UsageWindow* output) {
     if (windowNode == nullptr || output == nullptr) {
@@ -36,7 +49,11 @@ bool ExtractWindow(const jsonlite::Value* windowNode, UsageWindow* output) {
     output->remainingPercent = 100 - output->usedPercent;
     output->windowSeconds = std::max(*limit, 0);
     output->resetAfterSeconds = std::max(*resetAfter, 0);
-    output->resetAtUnixSeconds = static_cast<long long>(*resetAtValue);
+    output->resetAtUnixSeconds = 0;
+    if (std::isfinite(*resetAtValue) && *resetAtValue > 0.0 &&
+        *resetAtValue <= static_cast<double>(kMaxUnixTimestampSeconds)) {
+        output->resetAtUnixSeconds = static_cast<long long>(*resetAtValue);
+    }
     return true;
 }
 
@@ -143,6 +160,34 @@ std::wstring FormatResetAfter(int seconds) {
     return std::to_wstring(minutes) + L"m";
 }
 
+
+std::wstring FormatResetAtLocalTime(long long unixSeconds) {
+    if (unixSeconds <= 0 || unixSeconds > kMaxUnixTimestampSeconds) {
+        return L"--";
+    }
+
+    ULARGE_INTEGER fileTimeValue{};
+    fileTimeValue.QuadPart = kUnixEpochInFileTimeTicks +
+        static_cast<ULONGLONG>(unixSeconds) * kFileTimeTicksPerSecond;
+
+    FILETIME utcFileTime{};
+    utcFileTime.dwLowDateTime = fileTimeValue.LowPart;
+    utcFileTime.dwHighDateTime = fileTimeValue.HighPart;
+
+    SYSTEMTIME utcTime{};
+    SYSTEMTIME localTime{};
+    if (!FileTimeToSystemTime(&utcFileTime, &utcTime) ||
+        !SystemTimeToTzSpecificLocalTime(nullptr, &utcTime, &localTime)) {
+        return L"--";
+    }
+
+    return PadNumber(localTime.wYear, 4) + L"-" +
+        PadNumber(localTime.wMonth, 2) + L"-" +
+        PadNumber(localTime.wDay, 2) + L" " +
+        PadNumber(localTime.wHour, 2) + L":" +
+        PadNumber(localTime.wMinute, 2);
+}
+
 std::wstring BuildUsageTooltip(const UsageSnapshot& snapshot) {
     if (!snapshot.success) {
         if (snapshot.errorMessage.empty()) {
@@ -155,6 +200,10 @@ std::wstring BuildUsageTooltip(const UsageSnapshot& snapshot) {
         const std::wstring remaining = FormatRemainingPercent(window.remainingPercent);
         if (window.remainingPercent < 0) {
             return remaining;
+        }
+        const std::wstring resetAt = FormatResetAtLocalTime(window.resetAtUnixSeconds);
+        if (resetAt != L"--") {
+            return remaining + L" (\u91cd\u7f6e\u65f6\u95f4 " + resetAt + L")";
         }
         return remaining + L" (" + FormatResetAfter(window.resetAfterSeconds) + L"\u540e\u91cd\u7f6e)";
     };
