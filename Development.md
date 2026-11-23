@@ -29,7 +29,7 @@ Visual Studio 多配置生成器产物位于 `build/Release`；Ninja 产物位�
 - `src/CodexUsageCore.*`：解析 API 返回的 Unix `reset_at` 时间戳，使用 Windows 当前时区转换并按 `yyyy-MM-dd HH:mm` 格式显示。若时间戳无效，则保留原有倒计时显示。
 - `src/CodexUsagePlugin.cpp`：保存成功后清空旧显示，触发刷新；配置版本标记防止在途旧请求覆盖新配置结果。
 
-INI 节为 `[CodexUsage]`，键为 `auth_path`、`proxy_mode`（`system` / `direct` / `manual`）、`proxy_server`。没有配置文件时使用默认路径并直连；缺少或无法识别 `proxy_mode` 时也默认直连，已保存的有效代理模式会保留。手工编辑后需重启 TrafficMonitor。
+INI 节为 `[CodexUsage]`，键为 `auth_path`、`proxy_mode`（`system` / `direct` / `manual`）、`proxy_server`。没有配置文件时使用默认令牌路径并启用系统代理；缺少或无法识别 `proxy_mode` 时也默认系统代理。已保存的有效代理模式（包括用户主动选择的直连或手动代理）会保留，不会被默认值覆盖。手工编辑后需重启 TrafficMonitor。
 
 ## 排错
 
